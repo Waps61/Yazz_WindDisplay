@@ -22,7 +22,7 @@ NexPage::NexPage(uint8_t pid, uint8_t cid, const char *name)
 
 bool NexPage::show(void)
 {
-    uint8_t buffer[4] = {0};
+    //uint8_t buffer[4] = {0};
 
     const char *name = getObjName();
     if (!name)
