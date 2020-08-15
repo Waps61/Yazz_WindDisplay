@@ -1,4 +1,12 @@
 # Yazz_WindDisplay
+This project is all about building a wind display with a waterproofed Enhanced Nextion 3,5" display and and Arduino Nano clone.
+
+In addition to my completed NMEAtor project I'm building a waterproofed wind display. It has to replace the current 25 year old Robertson Wind display.
+
+The main goal is to read the NMEA0183 data from the wired network, interpret the data SOG, COG, AWA and AWS and show this in a wind display accordingly. Since the display is part of a daisy chained network it has to write the data it has read to the wired netwrok again.
+
+It is build with an Nextion Enhanced 3,5" touch display and an Arduino Nano V3 clone.
+
 Project:  WindDisplay.cpp, Copyright 2020, Roy Wassili
   Contact:  waps61 @gmail.com
   URL:      https://www.hackster.io/waps61
