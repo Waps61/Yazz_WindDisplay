@@ -3,10 +3,13 @@
   Project:  WindDisplay.cpp, Copyright 2020, Roy Wassili
   Contact:  waps61 @gmail.com
   URL:      https://www.hackster.io/waps61
-  VERSION:  1.0
+  VERSION:  1.1
   Date:     31-07-2020
   Last
-  Update:   15-08-2020 v1.0
+  Update:   23-08-2020 V1.1
+            Making use of the internal pull-up on input pin 10 for
+            more reliable signal
+            15-08-2020 v1.0
             Fixed some minor issues and prepared for relase 1.0
             13-08-2020 v0.12
             Optimized displayData function to fix 000 values on HMI
@@ -465,6 +468,7 @@ void setup()
   memcpy(_AWS, "0", 2);
   displayData();
 
+  pinMode(10, INPUT_PULLUP);
   nmeaSerial.begin(NMEA_BAUD);
 }
 
