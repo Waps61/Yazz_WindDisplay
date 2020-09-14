@@ -3,10 +3,12 @@
   Project:  WindDisplay.cpp, Copyright 2020, Roy Wassili
   Contact:  waps61 @gmail.com
   URL:      https://www.hackster.io/waps61
-  VERSION:  1.11
+  VERSION:  1.12
   Date:     14-09-2020
   Last
-  Update:   14-09-2020 V1.11
+  Update:   14-09-2020 V1.12
+            Added function isNumeric() and optimized loop() for newData = true
+            14-09-2020 V1.11
             Program crashes after about 20 minutes. Some chnages implemented
             from global to local variables to prevent heap overflow (best guess)
             23-08-2020 V1.1
@@ -204,41 +206,39 @@ void displayData()
 
   // set most significant value; if cog is a number else previous value
   if( isNumeric(_COG)){
-  intValue = atoi(_COG);
-  // values in degrees can not be bigger than 360
-  intValue = (long)(intValue % 360);
-  } else {
-    intValue = (oldVal>>21) & 511; // mask 9 bit value
-  }
+    intValue = atoi(_COG);
+    // values in degrees can not be bigger than 360
+    intValue = (long)(intValue % 360);
+  } else intValue = (oldVal>>21) & 511; // mask 9 bit value
   _BITVAL = (long)intValue; // put value cog in register
   _BITVAL = _BITVAL << 9;   // and shift left 9 bits making room for the next 9 bits
    
   //set awa if is a number
   if( isNumeric(_AWA)){
-  intValue = atoi(_AWA);
-  if (intValue < -180)
-    intValue *= -1; // the register has no place for signed integers
-  else
-    intValue += 360;
-  intValue = (long)(intValue % 360); // convert values <0; i.e. -179 -> 181
+    intValue = atoi(_AWA);
+    if (intValue < -180)
+      intValue *= -1; // the register has no place for signed integers
+    else
+      intValue += 360;
+    intValue = (long)(intValue % 360); // convert values <0; i.e. -179 -> 181
   } else intValue = (oldVal>>12) & 511;
   _BITVAL ^= (long)intValue;         // XOR add value to register
   _BITVAL = _BITVAL << 6;            // and shift left 6 bits to make room for sog
 
   //set sog if is a number
   if( isNumeric(_SOG)){
-  intValue = atoi(_SOG);
-  if (intValue < 0 || intValue > 63) // test for out of range values
-    intValue = (oldVal >> 6) & 63;   //0L; // use previos if true to prevent jumping values
+    intValue = atoi(_SOG);
+    if (intValue < 0 || intValue > 63) // test for out of range values
+      intValue = (oldVal >> 6) & 63;   //0L; // use previos if true to prevent jumping values
   } else intValue = (oldVal >> 6) & 63; 
   _BITVAL ^= (long)intValue;         // XOR the value into register
   _BITVAL = _BITVAL << 6;            // ans shift left 6 bits for final value of aws
 
   // set aws is is a number
   if(isNumeric(_AWS)){
-  intValue = atoi(_AWS);
-  if (intValue < 0 || intValue > 63) // test for invalid values
-    intValue = oldVal & 63;          //0L; // use previos if true to prevent jumping values
+    intValue = atoi(_AWS);
+    if (intValue < 0 || intValue > 63) // test for invalid values
+      intValue = oldVal & 63;          //0L; // use previos if true to prevent jumping values
   } else intValue = oldVal & 63; 
   _BITVAL ^= (long)intValue;
   
@@ -493,8 +493,10 @@ void setup()
 void loop()
 {
   recvNMEAData();
-  processNMEAData();
-  displayData();
+  if( newData ){
+    processNMEAData();
+    displayData();
+  }
 #ifdef WRITE_ENABLED
   relayData();
 #endif
