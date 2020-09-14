@@ -3,10 +3,13 @@
   Project:  WindDisplay.cpp, Copyright 2020, Roy Wassili
   Contact:  waps61 @gmail.com
   URL:      https://www.hackster.io/waps61
-  VERSION:  1.1
-  Date:     31-07-2020
+  VERSION:  1.11
+  Date:     14-09-2020
   Last
-  Update:   23-08-2020 V1.1
+  Update:   14-09-2020 V1.11
+            Program crashes after about 20 minutes. Some chnages implemented
+            from global to local variables to prevent heap overflow (best guess)
+            23-08-2020 V1.1
             Making use of the internal pull-up on input pin 10 for
             more reliable signal
             15-08-2020 v1.0
@@ -106,15 +109,7 @@
 #define GREEN 2016 //Nextion color
 
 //*** define the oject tags of the Nextion display
-#define WINDDISPLAY_GAUGE "vGAUGE"
-#define WINDDISPLAY_AWA "vAWA"
-#define WINDDISPLAY_AWS "vAWS"
-#define WINDDISPLAY_SOG "vSOG"
-#define WINDDISPLAY_COG "vCOG"
-#define WINDDISPLAY_WDIR "vWDIR"
 #define WINDDISPLAY_STATUS "status"
-#define INDICATOR_PORT ">>>"
-#define INDICATOR_STARBOARD "<<<"
 #define FIELD_BUFFER 15 //nr of char used for displaying info on Nextion
 
 enum displayItems
@@ -148,7 +143,6 @@ enum nextionStatus
   HMI_READY = 5
 };
 
-String sentence;
 char cvalue[FIELD_BUFFER] = {0};
 uint16_t tmpVal = 0;
 
@@ -163,6 +157,18 @@ char receivedChars[numChars];
 
 bool newData = false;
 unsigned long tmr1 = 0;
+
+/*** function check if a string is a number
+*/
+boolean isNumeric( char *value)
+{
+  boolean result = true;
+  int i = 0;
+  while (value[i] != '\0' && result){
+      result= isDigit( value[i++] );
+  }
+  return result;
+}
 
 /* Display wind data onto the nextion HMI
    the 4 parameters aws,sog,awa and cog are encode in a 32bit value
@@ -196,35 +202,46 @@ void displayData()
 {
   long intValue = 0L;
 
-  // set most significant value; cog
+  // set most significant value; if cog is a number else previous value
+  if( isNumeric(_COG)){
   intValue = atoi(_COG);
   // values in degrees can not be bigger than 360
   intValue = (long)(intValue % 360);
+  } else {
+    intValue = (oldVal>>21) & 511; // mask 9 bit value
+  }
   _BITVAL = (long)intValue; // put value cog in register
   _BITVAL = _BITVAL << 9;   // and shift left 9 bits making room for the next 9 bits
-  //set awa
+   
+  //set awa if is a number
+  if( isNumeric(_AWA)){
   intValue = atoi(_AWA);
   if (intValue < -180)
     intValue *= -1; // the register has no place for signed integers
   else
     intValue += 360;
   intValue = (long)(intValue % 360); // convert values <0; i.e. -179 -> 181
+  } else intValue = (oldVal>>12) & 511;
   _BITVAL ^= (long)intValue;         // XOR add value to register
   _BITVAL = _BITVAL << 6;            // and shift left 6 bits to make room for sog
 
-  //set sog
+  //set sog if is a number
+  if( isNumeric(_SOG)){
   intValue = atoi(_SOG);
-  if (intValue < 0 || intValue > 63) // test for invalid values
+  if (intValue < 0 || intValue > 63) // test for out of range values
     intValue = (oldVal >> 6) & 63;   //0L; // use previos if true to prevent jumping values
+  } else intValue = (oldVal >> 6) & 63; 
   _BITVAL ^= (long)intValue;         // XOR the value into register
   _BITVAL = _BITVAL << 6;            // ans shift left 6 bits for final value of aws
 
-  // set aws
+  // set aws is is a number
+  if(isNumeric(_AWS)){
   intValue = atoi(_AWS);
   if (intValue < 0 || intValue > 63) // test for invalid values
     intValue = oldVal & 63;          //0L; // use previos if true to prevent jumping values
+  } else intValue = oldVal & 63; 
   _BITVAL ^= (long)intValue;
-
+  
   //*** Nextion display timer max speed is 50ms
   // so no need to send faster than 50ms otherwise
   // flooding the serialbuffer
@@ -355,6 +372,7 @@ void recvNMEAData()
 */
 void processNMEAData()
 {
+  String sentence="";
   if (newData == true)
   {
 
@@ -367,9 +385,9 @@ void processNMEAData()
     li = sentence.indexOf(',', ci + 1);
     cp = 0;
 
-    if (sentence.indexOf("MWV", 0) > 0 ||
-        sentence.indexOf("RMC") > 0 ||
-        sentence.indexOf("VWR") > 0)
+    if (/*sentence.indexOf("MWV", 0) > 0 ||*/
+        sentence.indexOf("RMC",0) > 0 ||
+        sentence.indexOf("VWR",0) > 0)
     {
       field = 0; //ignore sentence tag
       while (li < sentence.length() && li < numChars)
