@@ -3,10 +3,12 @@
   Project:  WindDisplay.cpp, Copyright 2020, Roy Wassili
   Contact:  waps61 @gmail.com
   URL:      https://www.hackster.io/waps61
-  VERSION:  1.12
-  Date:     14-09-2020
+  VERSION:  1.13
+  Date:     28-09-2020
   Last
-  Update:   14-09-2020 V1.12
+  Update:   28-09-2020 V1.13
+            Fixed a bug in isNumeric() function causing the display to freeze
+            14-09-2020 V1.12
             Added function isNumeric() and optimized loop() for newData = true
             14-09-2020 V1.11
             Program crashes after about 20 minutes. Some chnages implemented
@@ -166,8 +168,9 @@ boolean isNumeric( char *value)
 {
   boolean result = true;
   int i = 0;
-  while (value[i] != '\0' && result){
-      result= isDigit( value[i++] );
+  while (value[i] != '\0' && result && i<FIELD_BUFFER){
+      result= (isDigit( value[i] ) || value[i]=='.' || value[i]=='-');
+      i++;
   }
   return result;
 }
@@ -385,7 +388,7 @@ void processNMEAData()
     li = sentence.indexOf(',', ci + 1);
     cp = 0;
 
-    if (/*sentence.indexOf("MWV", 0) > 0 ||*/
+    if (sentence.indexOf("MWV", 0) > 0 ||
         sentence.indexOf("RMC",0) > 0 ||
         sentence.indexOf("VWR",0) > 0)
     {
